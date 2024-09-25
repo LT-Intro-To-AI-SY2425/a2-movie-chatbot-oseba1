@@ -1,58 +1,46 @@
 from typing import List
-import re
 
 def match(pattern: List[str], source: List[str]) -> List[str]:
-    """Attempts to match the pattern to the source.
-
-    % matches a sequence of zero or more words and _ matches any single word
-
-    Args:
-        pattern - a pattern using to % and/or _ to extract words from the source
-        source - a phrase represented as a list of words (strings)
-
-    Returns:
-        None if the pattern and source do not "match" ELSE A list of matched words
-        (words in the source corresponding to _'s or %'s, in the pattern, if any)
-    """
     result = []
-    
-    if pattern == ["%"]:
-        return [" ".join(source)]
 
-    i = 0  # index for pattern
-    j = 0  # index for source
+    blankList = pattern # I like these names better
+    filledList = source
 
-    while i < len(pattern) and j < len(source):
-        if pattern[i] == "_":
-            result.append(source[j])
-            i += 1
-            j += 1
-        elif pattern[i] == "%":
-            # Consume all words until we hit a pattern part or end of source
-            while j < len(source) and (i + 1 < len(pattern) and pattern[i + 1] != source[j]):
-                result.append(source[j])
-                j += 1
-            # Move past the % in the pattern
-            i += 1
+    blankIndex = 0  # index for blankList
+    filledIndex = 0  # index for filledList
+
+    while blankIndex < len(blankList):
+        if blankList[blankIndex] == "_":
+            if filledIndex < len(filledList):
+                result.append(filledList[filledIndex])
+                filledIndex += 1
+            else:
+                return None  # Not enough words in filledList
+            blankIndex += 1
+        elif blankList[blankIndex] == "%":
+            temp = []
+            while filledIndex < len(filledList) and (blankIndex + 1 >= len(blankList) or filledList[filledIndex] != blankList[blankIndex + 1]):
+                temp.append(filledList[filledIndex])
+                filledIndex += 1
+            result.append(" ".join(temp))  # join collected words into a single string
+            blankIndex += 1
         else:
-            if pattern[i] != source[j]:
-                return None  # mismatch
-            i += 1
-            j += 1
+            # blankList does not match the filledList
+            if filledIndex >= len(filledList) or blankList[blankIndex] != filledList[filledIndex]:
+                return None
+            blankIndex += 1
+            filledIndex += 1
 
-    # Check for remaining pattern parts
-    while i < len(pattern) and pattern[i] == "%":
-        result.append("")  # Add empty for trailing % in pattern
-        i += 1
-
-    # If there's still unmatched pattern parts, return None
-    if i < len(pattern) or j < len(source):
-        return None
-
+    # check if there's still unmatched words in filledList
+    if filledIndex < len(filledList):
+        if blankList[-1] == "%":
+            result.append("")
+        else:
+            return None  # too many words in filledList
 
     return result
 
-# Testing assertions
+
 if __name__ == "__main__":
     assert match(["x", "y", "z"], ["x", "y", "z"]) == [], "test 1 failed"
     assert match(["x", "z", "z"], ["x", "y", "z"]) == None, "test 2 failed"
